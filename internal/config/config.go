@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 )
+
+const configFileName = ".gatorconfig.json"
 
 type Config struct {
 	DbUrl           string `json:"db_url"`
@@ -12,55 +15,59 @@ type Config struct {
 }
 
 func Read() (Config, error) {
-	homeUrl, err := os.UserHomeDir()
+	fullPath, err := getConfigFilePath()
 	if err != nil {
 		fmt.Println("Error reading home url:", err)
 		return Config{}, err
 	}
 
-	// Path to the JSON file
-	jsonPath := homeUrl + "/.gatorconfig.json"
-
 	// Open the file
-	file, err := os.Open(jsonPath)
+	file, err := os.Open(fullPath)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return Config{}, err
 	}
-
 	defer file.Close()
 
-	var config Config
-
 	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&config)
+	var cfg Config
+	err = decoder.Decode(&cfg)
 	if err != nil {
 		fmt.Println("Error decoding JSON:", err)
 		return Config{}, err
 	}
-	return config, nil
+	return cfg, nil
 }
 
-func (c *Config) SetUser(username string) error {
-	c.CurrentUserName = username
+func (cfg *Config) SetUser(username string) error {
+	cfg.CurrentUserName = username
+	return write(*cfg)
+}
 
-	updatedJSON, err := json.MarshalIndent(c, "", "  ")
+func getConfigFilePath() (string, error) {
+	home, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Println("Error encoding JSON:", err)
+		return "", err
 	}
+	fullPath := filepath.Join(home, configFileName)
+	return fullPath, nil
+}
 
-	homeUrl, err := os.UserHomeDir()
+func write(cfg Config) error {
+	fullPath, err := getConfigFilePath()
 	if err != nil {
-		fmt.Println("Error reading home url:", err)
 		return err
 	}
 
-	// Path to the JSON file
-	jsonPath := homeUrl + "/.gatorconfig.json"
-
-	err = os.WriteFile(jsonPath, updatedJSON, 0644)
+	file, err := os.Create(fullPath)
 	if err != nil {
-		fmt.Println("Error writing to file:", err)
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(cfg)
+	if err != nil {
 		return err
 	}
 
