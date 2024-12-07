@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"os"
 
 	config "github.com/samuelschmakel/blog_aggregator/internal/config"
 )
@@ -12,16 +12,35 @@ func main() {
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
-	fmt.Printf("Read config: %+v\n", cfg)
 
-	err = cfg.SetUser("Sam")
-	if err != nil {
-		log.Fatalf("unable to set user: %v", err)
+	state := config.State{}
+	state.Config = &cfg
+
+	cmds := config.Commands{Cmds: make(map[string]func(*config.State, config.Command) error)}
+	cmds.Cmds["login"] = config.HandlerLogin
+
+	// Check if arguments are provided
+	if len(os.Args) < 2 {
+		log.Fatal("a command name is required")
 	}
 
-	cfg, err = config.Read()
-	if err != nil {
-		log.Fatalf("error reading config: %v", err)
+	// Splitting command line arguments
+	var cmd config.Command
+	cmd.Name = os.Args[1]
+
+	if len(os.Args) >= 3 {
+		cmd.Args = os.Args[2:len(os.Args)]
 	}
-	fmt.Printf("Read config again: %+v\n", cfg)
+
+	// Run the command, if it is a valid command
+	handler, exists := cmds.Cmds[cmd.Name]
+	if !exists {
+		log.Fatalf("unknown command %s", cmd.Name)
+	}
+
+	// Execute the handler function
+	err = handler(&state, cmd)
+	if err != nil {
+		log.Fatalf("error executing command '%s': %v", cmd.Name, err)
+	}
 }

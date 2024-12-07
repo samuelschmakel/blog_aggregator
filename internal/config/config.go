@@ -14,6 +14,19 @@ type Config struct {
 	CurrentUserName string `json:"current_user_name"`
 }
 
+type State struct {
+	Config *Config
+}
+
+type Command struct {
+	Name string
+	Args []string
+}
+
+type Commands struct {
+	Cmds map[string]func(*State, Command) error
+}
+
 func Read() (Config, error) {
 	fullPath, err := getConfigFilePath()
 	if err != nil {
@@ -71,5 +84,35 @@ func write(cfg Config) error {
 		return err
 	}
 
+	return nil
+}
+
+func HandlerLogin(s *State, cmd Command) error {
+	if len(cmd.Args) == 0 {
+		return fmt.Errorf("the login handler expects a single argument, the username")
+	}
+	s.Config.CurrentUserName = cmd.Args[0]
+	fmt.Printf("%s has been set\n", s.Config.CurrentUserName)
+
+	err := write(*s.Config)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Commands) register(name string, f func(*State, Command) error) {
+	c.Cmds[name] = f
+}
+
+func (c *Commands) run(s *State, cmd Command) error {
+	key, ok := c.Cmds[cmd.Name]
+	if !ok {
+		return fmt.Errorf("the command %s wasn't found", cmd.Name)
+	}
+	err := key(s, cmd)
+	if err != nil {
+		return err
+	}
 	return nil
 }
