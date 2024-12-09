@@ -1,11 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	config "github.com/samuelschmakel/blog_aggregator/internal/config"
 )
+
+type state struct {
+	Config *config.Config
+}
 
 func main() {
 	cfg, err := config.Read()
@@ -13,34 +18,27 @@ func main() {
 		log.Fatalf("error reading config: %v", err)
 	}
 
-	state := config.State{}
-	state.Config = &cfg
+	programState := &state{
+		Config: &cfg,
+	}
 
-	cmds := config.Commands{Cmds: make(map[string]func(*config.State, config.Command) error)}
-	cmds.Cmds["login"] = config.HandlerLogin
+	cmds := commands{
+		cmds: make(map[string]func(*state, command) error)}
+	cmds.cmds["login"] = handlerLogin
 
 	// Check if arguments are provided
 	if len(os.Args) < 2 {
-		log.Fatal("a command name is required")
+		fmt.Println("Usage: cli <command> [args...]")
+		return
 	}
 
 	// Splitting command line arguments
-	var cmd config.Command
+	var cmd command
 	cmd.Name = os.Args[1]
+	cmd.Args = os.Args[2:]
 
-	if len(os.Args) >= 3 {
-		cmd.Args = os.Args[2:len(os.Args)]
-	}
-
-	// Run the command, if it is a valid command
-	handler, exists := cmds.Cmds[cmd.Name]
-	if !exists {
-		log.Fatalf("unknown command %s", cmd.Name)
-	}
-
-	// Execute the handler function
-	err = handler(&state, cmd)
+	err = cmds.Run(programState, cmd)
 	if err != nil {
-		log.Fatalf("error executing command '%s': %v", cmd.Name, err)
+		log.Fatal(err)
 	}
 }
