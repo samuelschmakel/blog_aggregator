@@ -41,6 +41,7 @@ func main() {
 		cmds: make(map[string]func(*state, command) error)}
 	cmds.cmds["login"] = handlerLogin
 	cmds.cmds["register"] = handlerRegister
+	cmds.cmds["reset"] = handlerReset
 
 	// Check if arguments are provided
 	if len(os.Args) < 2 {
