@@ -1,30 +1,46 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
 
+	_ "github.com/lib/pq"
+
 	config "github.com/samuelschmakel/blog_aggregator/internal/config"
+	"github.com/samuelschmakel/blog_aggregator/internal/database"
 )
 
 type state struct {
-	Config *config.Config
+	db  *database.Queries
+	cfg *config.Config
 }
 
 func main() {
+
 	cfg, err := config.Read()
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
 
+	// Database handling
+	dbConn, err := sql.Open("postgres", cfg.DbUrl)
+	if err != nil {
+		log.Fatalf("error opening database: %v", err)
+	}
+
+	dbQueries := database.New(dbConn)
+
 	programState := &state{
-		Config: &cfg,
+		db:  dbQueries,
+		cfg: &cfg,
 	}
 
 	cmds := commands{
 		cmds: make(map[string]func(*state, command) error)}
 	cmds.cmds["login"] = handlerLogin
+	cmds.cmds["register"] = handlerRegister
 
 	// Check if arguments are provided
 	if len(os.Args) < 2 {
@@ -41,4 +57,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 }
