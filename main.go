@@ -42,6 +42,7 @@ func main() {
 	cmds.cmds["login"] = handlerLogin
 	cmds.cmds["register"] = handlerRegister
 	cmds.cmds["reset"] = handlerReset
+	cmds.cmds["users"] = handlerGetUsers
 
 	// Check if arguments are provided
 	if len(os.Args) < 2 {
