@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -43,6 +44,7 @@ func main() {
 	cmds.cmds["register"] = handlerRegister
 	cmds.cmds["reset"] = handlerReset
 	cmds.cmds["users"] = handlerGetUsers
+	cmds.cmds["agg"] = handlerAggregator
 
 	// Check if arguments are provided
 	if len(os.Args) < 2 {
@@ -60,4 +62,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+}
+
+func handlerAggregator(s *state, cmd command) error {
+	url := "https://www.wagslane.dev/index.xml"
+	rssFeed, err := fetchFeed(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("couldn't fetch feed from %s: %v", url, err)
+	}
+
+	fmt.Printf("Feed: %+v\n", rssFeed)
+	return nil
 }
