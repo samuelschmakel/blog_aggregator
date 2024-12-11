@@ -44,6 +44,7 @@ func main() {
 	cmds.cmds["reset"] = handlerReset
 	cmds.cmds["users"] = handlerGetUsers
 	cmds.cmds["agg"] = handlerAgg
+	cmds.cmds["addfeed"] = handlerAddFeed
 
 	// Check if arguments are provided
 	if len(os.Args) < 2 {
