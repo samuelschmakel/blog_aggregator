@@ -7,54 +7,10 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
-
-const createFeed = `-- name: CreateFeed :one
-INSERT INTO feeds(id, created_at, updated_at, name, url, user_id)
-VALUES (
-    $1,
-    $2,
-    $3,
-    $4,
-    $5,
-    $6
-)
-RETURNING id, created_at, updated_at, name, url, user_id
-`
-
-type CreateFeedParams struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Name      string
-	Url       string
-	UserID    uuid.UUID
-}
-
-func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error) {
-	row := q.db.QueryRowContext(ctx, createFeed,
-		arg.ID,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-		arg.Name,
-		arg.Url,
-		arg.UserID,
-	)
-	var i Feed
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Name,
-		&i.Url,
-		&i.UserID,
-	)
-	return i, err
-}
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users(id, created_at, updated_at, name)
@@ -100,40 +56,6 @@ func (q *Queries) DeleteUsers(ctx context.Context) error {
 	return err
 }
 
-const getFeeds = `-- name: GetFeeds :many
-SELECT id, created_at, updated_at, name, url, user_id FROM feeds
-`
-
-func (q *Queries) GetFeeds(ctx context.Context) ([]Feed, error) {
-	rows, err := q.db.QueryContext(ctx, getFeeds)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Feed
-	for rows.Next() {
-		var i Feed
-		if err := rows.Scan(
-			&i.ID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.Name,
-			&i.Url,
-			&i.UserID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getUser = `-- name: GetUser :one
 SELECT id, created_at, updated_at, name
 FROM users
@@ -152,40 +74,20 @@ func (q *Queries) GetUser(ctx context.Context, name string) (User, error) {
 	return i, err
 }
 
-const getUserFromFeed = `-- name: GetUserFromFeed :many
-SELECT feeds.name, feeds.url, users.name
-FROM feeds
-LEFT JOIN users
-ON users.id = feeds.user_id
+const getUserById = `-- name: GetUserById :one
+SELECT id, created_at, updated_at, name FROM users WHERE id = $1
 `
 
-type GetUserFromFeedRow struct {
-	Name   string
-	Url    string
-	Name_2 sql.NullString
-}
-
-func (q *Queries) GetUserFromFeed(ctx context.Context) ([]GetUserFromFeedRow, error) {
-	rows, err := q.db.QueryContext(ctx, getUserFromFeed)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetUserFromFeedRow
-	for rows.Next() {
-		var i GetUserFromFeedRow
-		if err := rows.Scan(&i.Name, &i.Url, &i.Name_2); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserById, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+	)
+	return i, err
 }
 
 const getUsers = `-- name: GetUsers :many
