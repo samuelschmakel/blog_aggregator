@@ -31,3 +31,12 @@ DELETE FROM users;
 -- name: GetUsers :many
 SELECT name
 FROM users;
+
+-- name: GetFeeds :many
+SELECT * FROM feeds;
+
+-- name: GetUserFromFeed :many
+SELECT feeds.name, feeds.url, users.name
+FROM feeds
+LEFT JOIN users
+ON users.id = feeds.user_id;

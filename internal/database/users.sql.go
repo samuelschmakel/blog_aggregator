@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -99,6 +100,40 @@ func (q *Queries) DeleteUsers(ctx context.Context) error {
 	return err
 }
 
+const getFeeds = `-- name: GetFeeds :many
+SELECT id, created_at, updated_at, name, url, user_id FROM feeds
+`
+
+func (q *Queries) GetFeeds(ctx context.Context) ([]Feed, error) {
+	rows, err := q.db.QueryContext(ctx, getFeeds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Feed
+	for rows.Next() {
+		var i Feed
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Name,
+			&i.Url,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUser = `-- name: GetUser :one
 SELECT id, created_at, updated_at, name
 FROM users
@@ -115,6 +150,42 @@ func (q *Queries) GetUser(ctx context.Context, name string) (User, error) {
 		&i.Name,
 	)
 	return i, err
+}
+
+const getUserFromFeed = `-- name: GetUserFromFeed :many
+SELECT feeds.name, feeds.url, users.name
+FROM feeds
+LEFT JOIN users
+ON users.id = feeds.user_id
+`
+
+type GetUserFromFeedRow struct {
+	Name   string
+	Url    string
+	Name_2 sql.NullString
+}
+
+func (q *Queries) GetUserFromFeed(ctx context.Context) ([]GetUserFromFeedRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserFromFeed)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserFromFeedRow
+	for rows.Next() {
+		var i GetUserFromFeedRow
+		if err := rows.Scan(&i.Name, &i.Url, &i.Name_2); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getUsers = `-- name: GetUsers :many
