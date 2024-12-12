@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -39,15 +40,15 @@ func main() {
 
 	cmds := commands{
 		cmds: make(map[string]func(*state, command) error)}
-	cmds.cmds["login"] = handlerLogin
-	cmds.cmds["register"] = handlerRegister
-	cmds.cmds["reset"] = handlerReset
-	cmds.cmds["users"] = handlerGetUsers
-	cmds.cmds["agg"] = handlerAgg
-	cmds.cmds["addfeed"] = handlerAddFeed
-	cmds.cmds["feeds"] = handlerFeeds
-	cmds.cmds["follow"] = handlerFollow
-	cmds.cmds["following"] = handlerFollowing
+	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerReset)
+	cmds.register("users", handlerGetUsers)
+	cmds.register("agg", handlerAgg)
+	cmds.register("addfeed", middlewareLoggedIn(handlerAddFeed))
+	cmds.register("feeds", handlerFeeds)
+	cmds.register("follow", middlewareLoggedIn(handlerFollow))
+	cmds.register("following", middlewareLoggedIn(handlerFollowing))
 
 	// Check if arguments are provided
 	if len(os.Args) < 2 {
@@ -65,4 +66,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+}
+
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, cmd command) error {
+		user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+		if err != nil {
+			return fmt.Errorf("couldn't get user: %v", err)
+		}
+		return handler(s, cmd, user)
+	}
 }

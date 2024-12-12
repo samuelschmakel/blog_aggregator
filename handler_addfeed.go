@@ -9,7 +9,7 @@ import (
 	"github.com/samuelschmakel/blog_aggregator/internal/database"
 )
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 2 {
 		return fmt.Errorf("2 args are required: feed name and url")
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/samuelschmakel/blog_aggregator/internal/database"
 )
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("follow expects one argument, a url")
 	}
@@ -21,10 +21,6 @@ func handlerFollow(s *state, cmd command) error {
 		return fmt.Errorf("couldn't get feed: %v", err)
 	}
 
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("couldn't get user data: %v", err)
-	}
 	// creating new feed follow record
 	params := database.CreateFeedFollowParams{
 		ID:        uuid.New(),
@@ -42,12 +38,7 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("couldn't get user: %v", err)
-	}
-
+func handlerFollowing(s *state, cmd command, user database.User) error {
 	rows, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
 		return fmt.Errorf("couldn't get feed follows: %v", err)
