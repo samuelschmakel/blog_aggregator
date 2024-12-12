@@ -50,3 +50,27 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 
 	return nil
 }
+
+func handlerUnfollow(s *state, cmd command, user database.User) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("unfollow expects one argument, a url")
+	}
+
+	url := cmd.Args[0]
+
+	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("couldn't get user: %v", err)
+	}
+	params := database.UnfollowParams{
+		UserID: user.ID,
+		Url:    url,
+	}
+
+	err = s.db.Unfollow(context.Background(), params)
+	if err != nil {
+		return fmt.Errorf("couldn't unfollow: %v", err)
+	}
+
+	return nil
+}
