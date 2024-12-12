@@ -35,6 +35,20 @@ func handlerAddFeed(s *state, cmd command) error {
 		return fmt.Errorf("couldn't create feed: %v", err)
 	}
 
+	// creating new feed follow record
+	params := database.CreateFeedFollowParams{
+		ID:        feed.ID,
+		CreatedAt: feed.CreatedAt,
+		UpdatedAt: feed.UpdatedAt,
+		UserID:    feed.UserID,
+		FeedID:    feed.ID,
+	}
+
+	_, err = s.db.CreateFeedFollow(context.Background(), params)
+	if err != nil {
+		return fmt.Errorf("couldn't create feed follow: %v", err)
+	}
+
 	fmt.Println(feed)
 	return nil
 }

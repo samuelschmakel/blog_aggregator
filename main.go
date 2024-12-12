@@ -46,6 +46,8 @@ func main() {
 	cmds.cmds["agg"] = handlerAgg
 	cmds.cmds["addfeed"] = handlerAddFeed
 	cmds.cmds["feeds"] = handlerFeeds
+	cmds.cmds["follow"] = handlerFollow
+	cmds.cmds["following"] = handlerFollowing
 
 	// Check if arguments are provided
 	if len(os.Args) < 2 {
