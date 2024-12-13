@@ -161,4 +161,4 @@ Run gator by invoking its commands from the terminal. Below are the available co
 2. Log in as the registered user.
 3. Use the various commands to manage your feeds, follow others, and browse posts.
 
-Enjoy using gator to stay update blogs!
+Enjoy using gator to stay up to date on your favorite blogs!
